@@ -1,2 +1,2 @@
 # cf-devenvy
-Cloud Flare Development Environment for Docker
+Docker Image for Cloudflare Development Environment 
