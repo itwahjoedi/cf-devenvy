@@ -11,6 +11,11 @@ ENV CF_USER=cfuser
 ENV CF_UID=1000
 ENV CF_GID=1000
 
+# Menentukan di mana corepack akan menaruh symlink pnpm/yarn, dll.
+ENV PNPM_HOME="/usr/local/share/pnpm"
+# Pastikan direktori ini ada di PATH
+ENV PATH="$PNPM_HOME:$PATH"
+
 # renovate: datasource=github-releases depName=krallin/tini
 ARG TINI_VERSION=0.19.0
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
@@ -33,6 +38,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+RUN corepack enable \
+    && corepack prepare pnpm@latest --activate \
+    && pnpm --version
+
 # ========================
 # USER & WORKSPACE SETUP
 # ========================
@@ -50,18 +59,10 @@ WORKDIR /workspace
 RUN chown ${CF_USER}:${CF_USER} /workspace
 
 # ========================
-# INSTALL GLOBAL TOOLS (PNPM & WRANGLER)
+# INSTALL GLOBAL TOOLS (WRANGLER)
 # ========================
 USER ${CF_USER}
 
-# 1. Instalasi PNPM (penting untuk monorepo Anda)
-# Kami menggunakan corepack karena Node.js 20 sudah memilikinya.
-RUN corepack enable \
-    && corepack prepare pnpm@latest --activate \
-    && pnpm --version
-
-# 2. Instalasi Cloudflare Wrangler CLI
-# pnpm install -g lebih direkomendasikan daripada npm install -g
 RUN pnpm install -g wrangler@latest
 
 # Tentukan WORKDIR akhir dan Exposure Port
