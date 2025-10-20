@@ -50,7 +50,11 @@ RUN groupadd -g ${CF_GID} ${CF_USER} \
     && useradd -u ${CF_UID} -g ${CF_GID} -m -s /bin/bash ${CF_USER} \
     && echo "${CF_USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Siapkan direktori NPM global sebelum beralih user
+# Siapkan direktori NPM dan PNPM global sebelum beralih user
+
+RUN mkdir -p /usr/local/share/pnpm \
+    && chown -R ${CF_USER}:${CF_USER} /usr/local/share/pnpm
+
 RUN mkdir -p /usr/local/lib/node_modules \
     && chown -R ${CF_USER}:${CF_USER} /usr/local/lib/node_modules
 
