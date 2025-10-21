@@ -3,57 +3,54 @@ FROM node:20-slim
 LABEL org.opencontainers.image.authors="Indra Wahjoedi <iw@ijoe.eu.org>"
     
     # ========================
-    # ENVIRONMENT
+    # ENVIRONMENT VARIABLES
     # ========================
-    ENV DEBIAN_FRONTEND=noninteractive \
-    NODE_ENV=development \
-    CF_USER=cfuser \
-    CF_UID=1000 \
-    CF_GID=1000 \
-    PNPM_HOME="/usr/local/share/pnpm" \
-    PATH="$PNPM_HOME:$PATH" \
-    CF_API_TOKEN="" \
-    GITHUB_TOKEN=""
+    ENV DEBIAN_FRONTEND=noninteractive
+    ENV NODE_ENV=development
+    ENV CF_USER=cfuser
+    ENV PNPM_HOME="/usr/local/share/pnpm"
+    ENV PATH="$PNPM_HOME:$PATH"
     
     # ========================
-    # SYSTEM + DEV TOOLS + GITHUB CLI
+    # SYSTEM DEPENDENCIES
     # ========================
     RUN apt-get update && apt-get install -y --no-install-recommends \
-    git vim nano less wget unzip p7zip sudo tini curl gnupg2 ca-certificates \
-    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
-    https://cli.github.com/packages stable main" \
-    | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && apt-get update && apt-get install -y gh \
-    && corepack enable && corepack prepare pnpm@latest --activate \
+    curl git sudo procps ca-certificates gnupg2 apt-transport-https \
+    vim nano less wget unzip p7zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
     
     # ========================
-    # USER & WORKSPACE
+    # RENAME DEFAULT USER (node → cfuser)
     # ========================
-    RUN groupadd -g ${CF_GID} ${CF_USER} \
-    && useradd -u ${CF_UID} -g ${CF_GID} -m -s /bin/bash ${CF_USER} \
-    && echo "${CF_USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
-    && mkdir -p /workspace /usr/local/share/pnpm \
-    && chown -R ${CF_USER}:${CF_USER} /workspace /usr/local/share/pnpm
+    RUN existing_user=$(getent passwd 1000 | cut -d: -f1) \
+    && usermod -l ${CF_USER} ${existing_user} \
+    && usermod -d /home/${CF_USER} -m ${CF_USER} \
+    && echo "${CF_USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
     
     USER ${CF_USER}
     WORKDIR /workspace
     
     # ========================
-    # GLOBAL TOOLS
+    # INIT TINI
     # ========================
-    ARG WRANGLER_VERSION=3.70.0
-    RUN pnpm add -g wrangler@${WRANGLER_VERSION} \
-    && git config --global --add safe.directory /workspace
+    ARG TINI_VERSION=0.19.0
+    ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini /tini
+    RUN sudo chmod +x /tini
     
     # ========================
-    # AUTH HANDLER
+    # COREPACK, PNPM, WRANGLER, GH
     # ========================
-    COPY dev-entry.sh /usr/local/bin/dev-entry.sh
-    RUN sudo chmod +x /usr/local/bin/dev-entry.sh
+    RUN corepack enable && corepack prepare pnpm@latest --activate \
+    && pnpm install -g wrangler@latest gh@latest \
+    && pnpm store prune
+    
+    # ========================
+    # PERMISSIONS & SETUP
+    # ========================
+    RUN sudo mkdir -p /usr/local/share/pnpm /usr/local/lib/node_modules /workspace \
+    && sudo chown -R ${CF_USER}:${CF_USER} /usr/local/share/pnpm /usr/local/lib/node_modules /workspace
     
     EXPOSE 8787
-    ENTRYPOINT ["/usr/bin/tini", "--", "dev-entry.sh"]
+    
+    ENTRYPOINT ["/tini", "--"]
     CMD ["/bin/bash"]
