@@ -38,7 +38,7 @@ RUN chmod +x /tini
 # PERMISSIONS & SETUP
 # ========================
 RUN mkdir -p /usr/local/share/pnpm /usr/local/lib/node_modules /workspace \
-    && sudo chown -R ${CF_USER}:${CF_USER} /usr/local/share/pnpm /usr/local/lib/node_modules /workspace
+    && chown -R ${CF_USER}:${CF_USER} /usr/local/share/pnpm /usr/local/lib/node_modules /workspace
     
 # ========================
 # COREPACK, PNPM, WRANGLER, GH
