@@ -20,12 +20,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
     
 # ========================
-# RENAME DEFAULT USER (node → cfuser)
+# RENAME DEFAULT USER AND GROUP (node → cfuser)
 # ========================
 RUN existing_user=$(getent passwd 1000 | cut -d: -f1) \
     && usermod -l ${CF_USER} ${existing_user} \
     && usermod -d /home/${CF_USER} -m ${CF_USER} \
     && echo "${CF_USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    
+RUN existing_group=$(getent group 1000 | cut -d: -f1) \
+    && groupmod -n ${CF_USER} ${existing_group}
     
 # ========================
 # INIT TINI
