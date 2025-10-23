@@ -71,4 +71,5 @@ echo 'export PATH=$HOME/.local/share/pnpm/global/5/bin:$PATH' >> ~/.zshrc
 
 EXPOSE 22 8080
 ENTRYPOINT ["/tini", "/usr/local/bin/entrypoint.sh"]
-CMD ["/bin/zsh"]
+# CMD ["/bin/zsh"]
+CMD ["su", "-", "cfuser", "-c", "/bin/zsh"]
