@@ -1,0 +1,46 @@
+---
+type: install
+name: CF EnvyBox
+id: cf-envybox
+version: 1.0
+description: >
+  Cloudflare Edge Developer Box with persistent 2 GB volume per developer.
+  Pre-configured for Android (JuiceSSH + SPCK) workflow.
+
+globals:
+  image: itwahjoedi/cf-devenvy:latest
+  user: cfuser
+  volume: /home/cfuser
+  sizeLimit: 5G
+
+onInstall:
+  - cmd [container]: |
+      echo "Setting up CF EnvyBox..."
+      echo "Creating persistent workspace..."
+      mkdir -p /home/cfuser/projects
+      chown -R cfuser:cfuser /home/cfuser
+
+nodes:
+  nodeType: docker
+  nodeGroup: cp
+  docker:
+    image: ${globals.image}
+    volumes:
+      - ${globals.volume}
+    entrypoint: /usr/local/bin/entrypoint.sh
+  cloudlets: 32
+  env:
+    GH_TOKEN: ${settings.ghToken}
+    CF_API_TOKEN: ${settings.cfApiToken}
+
+settings:
+  fields:
+    - name: ghToken
+      caption: GitHub Token (read-only scope)
+      type: text
+      required: true
+    - name: cfApiToken
+      caption: Cloudflare API Token (staging scope)
+      type: text
+      required: true
+

@@ -1,18 +1,27 @@
+
 #!/usr/bin/env bash
 set -e
 
-# Inject Cloudflare token if provided
+echo "[CF EnvyBox] Booting developer environment..."
+
+# Optional read-only GitHub auth
+if [ -n "$GH_TOKEN" ]; then
+  echo "$GH_TOKEN" | gh auth login --with-token >/dev/null 2>&1 || true
+fi
+
+# Cloudflare staging auth
 if [ -n "$CF_API_TOKEN" ]; then
-  mkdir -p ~/.config/wrangler
-  echo "{\"api_token\":\"$CF_API_TOKEN\"}" > ~/.config/wrangler/config.json
-  echo "✅ Cloudflare token configured."
+  mkdir -p ~/.wrangler/config
+  echo "{\"api_token\":\"$CF_API_TOKEN\"}" > ~/.wrangler/config/default
+  chmod 600 ~/.wrangler/config/default
 fi
 
-# Inject GitHub token if provided
-if [ -n "$GITHUB_TOKEN" ]; then
-  mkdir -p ~/.config/gh
-  echo "oauth_token: $GITHUB_TOKEN" > ~/.config/gh/hosts.yml
-  echo "✅ GitHub token configured."
-fi
+# Clean ephemeral env vars
+unset GH_TOKEN CF_API_TOKEN
 
-exec "$@"
+# Prepare workspace
+mkdir -p ~/projects ~/.cache/pnpm ~/.config ~/.ssh
+chmod 700 ~
+echo "[CF EnvyBox] Ready. Persistent storage active at /home/cfuser (2 GB cap)."
+echo "[Hint] Use:  cd ~/projects && git clone <repo>  or  gp (pull + install)"
+exec zsh
