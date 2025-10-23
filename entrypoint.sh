@@ -16,11 +16,16 @@ if [ -n "$CF_API_TOKEN" ]; then
 fi
 
 # Clean ephemeral env vars
-unset GH_TOKEN CF_API_TOKEN
+unset GH_TOKEN CF_API_TOKEN SSH_PUBKEY
 
 # Prepare workspace
 mkdir -p ~/projects ~/.cache/pnpm ~/.config ~/.ssh
 chmod 700 ~
 echo "[CF EnvyBox] Ready. Persistent storage active at /home/cfuser (2 GB cap)."
 echo "[Hint] Use:  cd ~/projects && git clone <repo>  or  gp (pull + install)"
-exec zsh
+#exec zsh
+if [ "$USER" = "root" ]; then
+  exec su - cfuser -c "/bin/zsh"
+else
+  exec /bin/zsh
+fi

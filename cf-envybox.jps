@@ -32,6 +32,7 @@ nodes:
   env:
     GH_TOKEN: ${settings.ghToken}
     CF_API_TOKEN: ${settings.cfApiToken}
+    SSH_PUBKEY: ${settings.sshPubkey} 
 
 settings:
   fields:
@@ -43,4 +44,9 @@ settings:
       caption: Cloudflare API Token (staging scope)
       type: text
       required: true
+    - name: sshPubkey
+      caption: Your SSH Public Key
+      type: text
+      required: true
+
 
