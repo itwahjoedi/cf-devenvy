@@ -52,22 +52,22 @@ RUN mkdir -p /usr/local/share/pnpm /usr/local/lib/node_modules \
 RUN corepack enable && corepack prepare pnpm@latest --activate \
     && pnpm install -g wrangler@latest gh@latest \
     && pnpm store prune
-    
-USER ${CF_USER}
-WORKDIR /home/${CF_USER}
 
-# User Config
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 #---------------------------------
 # DX enhancements
 # ---------------------------------------------------------------------
+    
+# User Config
+USER ${CF_USER}
+WORKDIR /home/${CF_USER}
+
 RUN echo 'alias wr="wrangler"' >> ~/.zshrc && \
 echo 'alias gp="git pull && pnpm install"' >> ~/.zshrc && \
 echo 'alias clean="rm -rf ~/.cache/pnpm ~/.npm"' >> ~/.zshrc && \
 echo 'export PATH=$HOME/.local/share/pnpm/global/5/bin:$PATH' >> ~/.zshrc
-
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 22 8080
 ENTRYPOINT ["/tini", "/usr/local/bin/entrypoint.sh"]
