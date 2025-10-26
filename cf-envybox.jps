@@ -14,40 +14,38 @@ globals:
   dataPath: /data/cfuser-workspace
   sizeLimit: 5
 
-onInstall:
-  - cmd [container]: |
-      echo "Setting up CF EnvyBox..."
-      echo "Creating persistent workspace..."
-      mkdir -p /home/cfuser/projects
-      chown -R cfuser:cfuser /home/cfuser
-
 nodes:
-  nodeType: docker
-  nodeGroup: cp
-  displayName: CF DevEnv
-  docker:
-    image: ${globals.image}
-    entrypoint: /usr/local/bin/entrypoint.sh
-  cloudlets: 32
-  volumes:
-      - ${globals.dataPath}
-    volumeMounts:
-      ${globals.dataPath}:
-        sourcePath: /home/cfuser
-        readOnly: false
-  env:
-    GH_TOKEN: ${settings.ghToken}
-    CF_API_TOKEN: ${settings.cfApiToken}
-    SSH_PUBKEY: ${settings.sshPubkey} 
-
-- nodeType: storage
+  - nodeType: storage
     nodeGroup: storage
-    displayName: Persistent Storage
+    displayName: Envybox Persistent Storage
     cloudlets: 8
     fixedCloudlets: 1
     diskLimit: ${globals.sizeLimit}
     volumes:
-      - /data
+      - name: ${globals.dataPath}
+        sourcePath: /data
+
+  - nodeType: docker
+    nodeGroup: cp
+    displayName: CF Envybox
+    docker:
+      image: ${globals.image}
+      entrypoint: /usr/local/bin/entrypoint.sh
+    cloudlets: 64
+    scalingMode: FIXED
+    volumes:
+     - name: ${globals.dataPath}
+       targetPath: /home/${globals.user}
+    volumeMounts:
+      ${globals.dataPath}:
+        sourceNodeGroup: storage
+        sourcePath: /data
+        targetPath: /home/${globals.user}
+        readOnly: false
+    env:
+      GH_TOKEN: ${settings.ghToken}
+      CF_API_TOKEN: ${settings.cfApiToken}
+      SSH_PUBKEY: ${settings.sshPubkey} 
 
 settings:
   fields:
