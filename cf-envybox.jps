@@ -14,6 +14,84 @@ globals:
   dataPath: /data/cfuser-workspace
   sizeLimit: 5
 
+onInstall:
+  - setupCredentials
+  - initWorkspace
+  
+actions:
+  attachPublicIP:
+    api: jelastic.environment.externalip.AttachIP
+    params:
+      envName: ${env.envName}
+      session: ${session}
+      nodeGroup: cp
+      isIPv6: true
+      
+  setupCredentials:
+    - cmd [cp]: |
+        # Create secure temp directory (tmpfs in-memory)
+        mkdir -p /run/cf-setup
+        chmod 700 /run/cf-setup
+        
+        # Write tokens to tmpfs (not persisted to disk)
+        cat > /run/cf-setup/gh_token <<EOF
+        ${settings.ghToken}
+        EOF
+        
+        cat > /run/cf-setup/cf_token <<EOF
+        ${settings.cfApiToken}
+        EOF
+        
+        cat > /run/cf-setup/ssh_key <<EOF
+        ${settings.sshPubkey}
+        EOF
+        
+        chmod 600 /run/cf-setup/*
+        chown 1000:1000 /run/cf-setup/*
+        
+    - cmd [cp]: |
+        # Execute as cfuser to setup credentials
+        su - cfuser -c '
+          # GitHub auth
+          if [ -f /run/cf-setup/gh_token ]; then
+            cat /run/cf-setup/gh_token | gh auth login --with-token 2>/dev/null || true
+          fi
+          
+          # Cloudflare auth
+          if [ -f /run/cf-setup/cf_token ]; then
+            mkdir -p ~/.wrangler/config
+            echo "{\"api_token\":\"$(cat /run/cf-setup/cf_token)\"}" > ~/.wrangler/config/default
+            chmod 600 ~/.wrangler/config/default
+          fi
+          
+          # SSH key
+          if [ -f /run/cf-setup/ssh_key ]; then
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+            cat /run/cf-setup/ssh_key > ~/.ssh/authorized_keys
+            chmod 600 ~/.ssh/authorized_keys
+          fi
+        '
+     
+    - cmd [cp]: |
+        # Secure wipe temp files
+        shred -vfz -n 3 /run/cf-setup/* 2>/dev/null || true
+        rm -rf /run/cf-setup
+        
+  initWorkspace:
+    - cmd [cp]: |
+        echo "Setting up workspace..."
+        su - cfuser -c '
+          mkdir -p ~/projects ~/.cache/pnpm ~/.config
+          chmod 700 ~
+        '
+        echo "[CF EnvyBox] Ready. Credentials configured securely."
+
+onAfterInstall:
+  - action: attachPublicIP
+    caption: Menambahkan Public IP
+
+
 nodes:
   - nodeType: storage
     nodeGroup: storage
@@ -42,20 +120,18 @@ nodes:
         sourcePath: /data
         targetPath: /home/${globals.user}
         readOnly: false
-    env:
-      GH_TOKEN: ${settings.ghToken}
-      CF_API_TOKEN: ${settings.cfApiToken}
-      SSH_PUBKEY: ${settings.sshPubkey} 
-
+    
 settings:
   fields:
     - name: ghToken
       caption: GitHub Token (read-only scope)
       type: text
+      inputType: password
       required: true
     - name: cfApiToken
       caption: Cloudflare API Token (staging scope)
       type: text
+      inputType: password
       required: true
     - name: sshPubkey
       caption: Your SSH Public Key
