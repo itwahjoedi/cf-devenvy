@@ -101,7 +101,6 @@ nodes:
     diskLimit: ${globals.sizeLimit}
     volumes:
       - name: ${globals.dataPath}
-        sourcePath: cfuser-workspace
 
   - nodeType: docker
     nodeGroup: cp
@@ -117,7 +116,6 @@ nodes:
     volumeMounts:
       ${globals.dataPath}:
         sourceNodeGroup: storage
-        sourcePath: /data/cfuser-workspace
         targetPath: /home/${globals.user}
         readOnly: false
     
