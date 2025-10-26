@@ -110,7 +110,7 @@ nodes:
       image: ${globals.image}
       entrypoint: /usr/local/bin/entrypoint.sh
     cloudlets: 64
-    scalingMode: FIXED
+    scalingMode: STATEFUL
     volumes:
      - name: ${globals.dataPath}
        targetPath: /home/${globals.user}
