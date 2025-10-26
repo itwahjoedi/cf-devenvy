@@ -11,7 +11,7 @@ description: >
 globals:
   image: itwahjoedi/cf-devenvy:latest
   user: cfuser
-  dataPath: /data//data/cfuser-workspace
+  dataPath: /data/cfuser-workspace
   sizeLimit: 5
 
 onInstall:
@@ -117,7 +117,7 @@ nodes:
     volumeMounts:
       ${globals.dataPath}:
         sourceNodeGroup: storage
-        sourcePath: cfuser-workspace
+        sourcePath: /data/cfuser-workspace
         targetPath: /home/${globals.user}
         readOnly: false
     
