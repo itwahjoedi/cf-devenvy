@@ -12,6 +12,7 @@ globals:
   image: itwahjoedi/cf-devenvy:latest
   user: cfuser
   shortdomain: ${env.shortdomain}
+  session: ${env.session}
   dataPath: /data/${env.shortdomain}-cfuser-workspace
   sizeLimit: 5
 
