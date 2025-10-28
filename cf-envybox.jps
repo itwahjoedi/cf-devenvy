@@ -11,7 +11,8 @@ description: >
 globals:
   image: itwahjoedi/cf-devenvy:latest
   user: cfuser
-  dataPath: /data/@env.shortdomain@-cfuser-workspace
+  shortdomain: ${env.shortdomain}
+  dataPath: /data/${env.shortdomain}-cfuser-workspace
   sizeLimit: 5
 
 onInstall:
@@ -22,8 +23,8 @@ actions:
   attachPublicIP:
     api: jelastic.environment.externalip.AttachIP
     params:
-      envName: @env.shortdomain@
-      session: @session@
+      envName: ${globals.shortdomain}
+      session: ${globals.session}
       nodeGroup: cp
       isIPv6: true
       
