@@ -11,7 +11,7 @@ description: >
 globals:
   image: itwahjoedi/cf-devenvy:latest
   user: cfuser
-  dataPath: /data/cfuser-workspace
+  dataPath: /data/${env.envName}-cfuser-workspace
   sizeLimit: 5
 
 onInstall:
@@ -108,11 +108,13 @@ nodes:
     docker:
       image: ${globals.image}
       entrypoint: /usr/local/bin/entrypoint.sh
+      healthCheck:
+        exec: ["wrangler", "--version"]
+        interval: 30
+        timeout: 10
+        retries: 3
     cloudlets: 64
     scalingMode: STATEFUL
-    volumes:
-     - name: ${globals.dataPath}
-       targetPath: /home/${globals.user}
     volumeMounts:
       ${globals.dataPath}:
         sourceNodeGroup: storage
